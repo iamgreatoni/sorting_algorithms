@@ -1,88 +1,75 @@
 #include "sort.h"
 
 /**
- * swap_items - Swaps two items in an array.
- * @array: The array to modify.
- * @l: The index of the left item.
- * @r: The index of the right item.
- */
-void swap_items(int *array, size_t l, size_t r)
-{
-	int tmp;
-
-	if (array != NULL)
-	{
-		tmp = array[l];
-		array[l] = array[r];
-		array[r] = tmp;
-	}
-}
-
-/**
- * bitonic_merge - Merges the items in a sub-array based on a given order.
- * @array: The array to sort.
- * @size: The length of the array (should be a power of 2).
- * @low: The starting position of the sub-array.
- * @n: The length of the sub-array.
- * @ascending: A flag specifying the direction of the items in this sub-array.
- */
-void bitonic_merge(int *array, size_t size,
-									 size_t low, size_t n, char ascending)
-{
-	size_t i, m;
-
-	if ((array != NULL) && (n > 1))
-	{
-		m = n / 2;
-		for (i = low; i < (low + m); i++)
-		{
-			if ((array[i] > array[i + m]) == ascending)
-			{
-				swap_items(array, i, i + m);
-			}
-		}
-		bitonic_merge(array, size, low, m, ascending);
-		bitonic_merge(array, size, low + m, m, ascending);
-	}
-}
-
-/**
- * bitonic_sort_split - Sorts a sub-array using the bitonic algorithm.
- * @array: The array to sort.
- * @size: The length of the array (should be a power of 2).
- * @low: The starting position of the sub-array.
- * @n: The length of the sub-array.
- * @ascending: A flag specifying the direction of the items in this sub-array.
- */
-void bitonic_sort_split(int *array, size_t size,
-												size_t low, size_t n, char ascending)
-{
-	size_t m;
-
-	if ((array != NULL) && (n > 1))
-	{
-		m = n / 2;
-		printf("Merging [%d/%d] (%s):\n",
-					(int)(n), (int)size, ascending ? "UP" : "DOWN");
-		print_array(array + low, n);
-		bitonic_sort_split(array, size, low, m, TRUE);
-		bitonic_sort_split(array, size, low + m, m, FALSE);
-		bitonic_merge(array, size, low, n, ascending);
-		printf("Result [%d/%d] (%s):\n",
-					(int)(n), (int)size, ascending ? "UP" : "DOWN");
-		print_array(array + low, n);
-	}
-}
-
-/**
- * bitonic_sort - Sorts an array using the bitonic sort algorithm.
- * @array: The array to sort.
- * @size: The length of the array (should be a power of 2).
+ * bitonic_sort - sorts an array following the Bitonic sort algorithm
+ * @array: array of ints to sort
+ * @size: size of the array
  */
 void bitonic_sort(int *array, size_t size)
 {
-	if (array != NULL)
+	if (!array || size < 2)
+		return;
+
+	bitonic_recursion(array, 0, size - 1, 1, size);
+}
+
+/**
+ * bitonic_recursion - recursive function for bitonic sort
+ * @array: array to sort
+ * @l: index of the left-most element
+ * @r: index of the right-most element
+ * @direction: ascending or descending
+ * @size: size of the array
+ */
+void bitonic_recursion(int *array, int l, int r, int direction, size_t size)
+{
+	int step;
+
+	if (r - l >= 1)
 	{
-		bitonic_sort_split(array, size, 0, size, TRUE);
+		step = (r + l) / 2;
+		printf("Merging [%d/%lu] ", r - l + 1, size);
+		if (direction)
+			printf("(UP):\n");
+		else
+			printf("(DOWN):\n");
+		print_array(array + l, r - l + 1);
+		bitonic_recursion(array, l, step, 1, size);
+		bitonic_recursion(array, step + 1, r, 0, size);
+		bitonic_merge(array, l, r, direction);
+		printf("Result [%d/%lu] ", r - l + 1, size);
+		if (direction)
+			printf("(UP):\n");
+		else
+			printf("(DOWN):\n");
+		print_array(array + l, r - l + 1);
 	}
+}
+
+/**
+ * bitonic_merge - sorts and merges a sequence in ascending or descending order
+ * @array: array to sort
+ * @l: index of the left-most element
+ * @r: index of the right-most element
+ * @direction: ascending or descending
+ */
+void bitonic_merge(int *array, int l, int r, int direction)
+{
+	int tmp, i, step = (l + r) / 2, mid = (r - l + 1) / 2;
+
+	if (r - l >= 1)
+	{
+		for (i = l; i < l + mid; i++)
+		{
+			if (direction == (array[i] > array[i + mid]))
+			{
+				tmp = array[i + mid];
+				array[i + mid] = array[i];
+				array[i] = tmp;
+			}
+		}
+		bitonic_merge(array, l, step, direction);
+		bitonic_merge(array, step + 1, r, direction);
+	}
+
 }
